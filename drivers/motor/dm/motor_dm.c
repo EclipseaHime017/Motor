@@ -198,9 +198,13 @@ static void dm_rx_handler(const struct device *can_dev, struct can_frame *frame,
 
 	data->err = frame->data[0] >> 4;
 	data->enabled = data->err & 1;
-	data->RAWangle = (frame->data[1] << 8) | (frame->data[2]);
-	data->RAWrpm = (frame->data[3] << 4) | (frame->data[4] >> 4);
-	data->RAWtorque = (frame->data[4] & 0xF) << 8;
+	/* Wrong: storing these packed unsigned values in int16_t makes 0x8000 wrap negative. */
+	// data->RAWangle = (frame->data[1] << 8) | (frame->data[2]);
+	// data->RAWrpm = (frame->data[3] << 4) | (frame->data[4] >> 4);
+	// data->RAWtorque = (frame->data[4] & 0xF) << 8;
+	data->RAWangle = ((uint16_t)frame->data[1] << 8) | frame->data[2];
+	data->RAWrpm = ((uint16_t)frame->data[3] << 4) | (frame->data[4] >> 4);
+	data->RAWtorque = ((uint16_t)(frame->data[4] & 0x0F) << 8) | frame->data[5];
 	data->update = true;
 
 	if (data->enable && !data->online) {
@@ -311,7 +315,7 @@ int dm_set(const struct device *dev, motor_status_t *status)
 		// data->params.k_p = 0;
 		// data->params.k_d = 0;
 	} else if (status->mode == PV) {
-		data->target_angle = status->angle;
+		data->target_angle = status->angle/(RAD2DEG);
 		data->target_radps = RPM2RADPS(status->rpm);
 	} else if (status->mode == VO) {
 		data->target_radps = RPM2RADPS(status->rpm);

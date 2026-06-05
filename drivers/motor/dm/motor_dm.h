@@ -66,9 +66,10 @@ struct dm_motor_data {
 	float target_radps;
 	float target_torque;
 
-	int16_t RAWangle;
-	int16_t RAWrpm;
-	int16_t RAWtorque;
+	/* DM feedback position/speed/torque fields are unsigned packed integers. */
+	uint16_t RAWangle;
+	uint16_t RAWrpm;
+	uint16_t RAWtorque;
 
 	struct pid_config params;
 
